@@ -40,15 +40,13 @@
 <p align="center">一维深度神经网络（ResNet-1D）同时识别 10 种心血管疾病，提供 Web 网页端交互式诊断与 Grad-CAM 可解释性热力图。</p>
 
 <div align="center">
-  <!-- 演示视频：将 demo_video.mp4 拖入任意 GitHub Issue/评论上传后，把下面 URL 的 VIDEO_ID 替换为 user-attachments 的真实 ID -->
-  <video src="https://github.com/user-attachments/assets/VIDEO_ID" controls preload="metadata" width="560"></video>
+  <video src="https://github.com/user-attachments/assets/1d8d262d-50b3-4113-9db1-9512bda9e566" controls preload="metadata" width="560"></video>
 </div>
 
 <p align="center">
   <sub>🎬 操作演示视频（2.3MB · 已随仓库分发，也可下载 <code>demo_video.mp4</code> 本地查看）</sub>
 </p>
 
-> [!IMPORTANT]
 > **医学免责声明**：本系统输出的诊断结果仅供专业医师参考，不作为自动诊断或临床决策的唯一依据。
 
 <br/>
