@@ -67,5 +67,5 @@ hardware:
   num_workers: 4
   seed: 42
 versioning:
-  version: 1.2.0
+  version: 0.2.0
   description: 修复标签编码bug（0概率SCP码不再计为正例）+ 重新选择诊断类
