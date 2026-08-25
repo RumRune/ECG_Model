@@ -12,7 +12,7 @@
 
 ## 演示视频
 
-<video src="demo_video.mp4" controls width="100%"></video>
+![演示视频](demo_video.mp4)
 
 > 🎬 点击上方 ▶ 即可在网页端直接播放操作演示（视频已随仓库分发，也可下载 `demo_video.mp4` 本地查看）。
 
