@@ -1,22 +1,57 @@
-# 心电图 AI 辅助诊断平台 (ECG_Model)
+<p align="center">
+  <img src="docs/logo.svg" alt="ECG_Model" width="128"/>
+</p>
 
-基于 **PTB-XL** 公开数据集的 **12 导联心电图多标签智能诊断系统**，采用一维深度神经网络（ResNet-1D）同时识别 10 种心血管疾病，并提供 Web 网页端交互式诊断与 **Grad-CAM 可解释性热力图**。
+<h1 align="center">心电图 AI 辅助诊断平台 (ECG_Model)</h1>
 
-- **Web 前端**：纯 HTML + Plotly.js + FastAPI（单服务部署，浏览器即用）
-- **模型**：ResNet-18 一维变体（含 Squeeze-and-Excitation 注意力）
-- **诊断**：10 类多标签分类 + 优化阈值判定 + Grad-CAM 波形热力图
+<p align="center">
+  <strong>简体中文</strong>
+  &nbsp;·&nbsp;
+  <a href="#功能特性">功能特性</a>
+  &nbsp;·&nbsp;
+  <a href="#安装">安装</a>
+  &nbsp;·&nbsp;
+  <a href="#项目结构">项目结构</a>
+  &nbsp;·&nbsp;
+  <a href="#数据说明与准备">数据</a>
+  &nbsp;·&nbsp;
+  <a href="#测试">测试</a>
+  &nbsp;·&nbsp;
+  <a href="#模型与评估">评估</a>
+  &nbsp;·&nbsp;
+  <a href="#许可证与致谢">License</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/RumRune/ECG_Model">GitHub</a>
+</p>
 
-> ⚠️ **医学免责声明**：本系统输出的诊断结果仅供专业医师参考，不作为自动诊断或临床决策的唯一依据。
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/RumRune/ECG_Model?style=flat-square&color=8b949e&labelColor=161b22" alt="license"/></a>
+  <a href=""><img src="https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&labelColor=161b22&logo=python&logoColor=white" alt="Python"/></a>
+  <a href=""><img src="https://img.shields.io/badge/PyTorch-2.2%2B-EE4C2C?style=flat-square&labelColor=161b22&logo=pytorch&logoColor=white" alt="PyTorch"/></a>
+  <a href="https://github.com/RumRune/ECG_Model/releases"><img src="https://img.shields.io/github/v/release/RumRune/ECG_Model?style=flat-square&color=3fb950&labelColor=161b22&label=release" alt="release"/></a>
+  <a href="https://github.com/RumRune/ECG_Model/stargazers"><img src="https://img.shields.io/github/stars/RumRune/ECG_Model?style=flat-square&color=dbab09&labelColor=161b22&logo=github&logoColor=white" alt="stars"/></a>
+  <a href="https://physionet.org/content/ptb-xl/1.0.2/"><img src="https://img.shields.io/badge/dataset-PTB--XL-58a6ff?style=flat-square&labelColor=161b22" alt="PTB-XL"/></a>
+</p>
 
----
+<br/>
 
-## 演示视频
+<p align="center"><strong>Open source · MIT · PyTorch</strong></p>
+<h3 align="center">基于 PTB-XL 的 12 导联心电图多标签智能诊断系统</h3>
+<p align="center">一维深度神经网络（ResNet-1D）同时识别 10 种心血管疾病，提供 Web 网页端交互式诊断与 Grad-CAM 可解释性热力图。</p>
 
-![演示视频](demo_video.mp4)
+<div align="center">
+  <!-- 演示视频：将 demo_video.mp4 拖入任意 GitHub Issue/评论上传后，把下面 URL 的 VIDEO_ID 替换为 user-attachments 的真实 ID -->
+  <video src="https://github.com/user-attachments/assets/VIDEO_ID" controls preload="metadata" width="560"></video>
+</div>
 
-> 🎬 点击上方 ▶ 即可在网页端直接播放操作演示（视频已随仓库分发，也可下载 `demo_video.mp4` 本地查看）。
+<p align="center">
+  <sub>🎬 操作演示视频（2.3MB · 已随仓库分发，也可下载 <code>demo_video.mp4</code> 本地查看）</sub>
+</p>
 
----
+> [!IMPORTANT]
+> **医学免责声明**：本系统输出的诊断结果仅供专业医师参考，不作为自动诊断或临床决策的唯一依据。
+
+<br/>
 
 ## 功能特性
 
@@ -28,8 +63,6 @@
 | 🔥 **可解释性热力图** | Grad-CAM 热力图叠加到波形，展示模型关注的心电片段 |
 | 🩺 **结果可视化** | 概率进度条、阳性异常高亮、异常汇总警示框 |
 | 🚀 **单服务部署** | FastAPI 同时托管后端 API 与 HTML 前端，一条命令启动 |
-
----
 
 ## 支持的诊断类别（10 类多标签）
 
@@ -45,8 +78,6 @@
 | IRBBB | 不完全性右束支传导阻滞 |
 | PVC | 室性早搏 |
 | IVCD | 室内传导异常 |
-
----
 
 ## 安装
 
@@ -104,8 +135,6 @@ python -c "import torch, numpy, pandas, fastapi, uvicorn; print('✅ 依赖安�
 **核心依赖清单**：`torch`、`numpy`、`scipy`、`pandas`、`scikit-learn`、`matplotlib`、`seaborn`、`plotly`、`fastapi`、`uvicorn[standard]`、`pydantic`、`pyyaml`、`tqdm`、`wfdb`、`pydicom`、`joblib`。
 
 > 可选：`pip install captum` 可启用 Integrated Gradients 可解释性分析（`interpret.py --integrated`）；`pip install tensorboard` 可记录训练曲线（未安装时 train.py 自动跳过日志）。
-
----
 
 ## 运行（使用已训练模型）
 
@@ -188,8 +217,6 @@ print(result["gradcam_heatmaps"])   # 热力图（explain=true 时）
 | `/predict` | POST | 单条心电信号诊断（`?explain=true` 返回热力图） |
 | `/predict_batch` | POST | 批量诊断 + 汇总统计 |
 
----
-
 ## 项目结构
 
 ```
@@ -203,6 +230,8 @@ ECG_Model/
 │   └── static/             # HTML 前端
 │       ├── index.html      #   单页前端（上传/波形/诊断/热力图）
 │       └── vendor/plotly.min.js  # 本地 Plotly（无外网依赖）
+├── docs/                   # 文档资源
+│   └── logo.svg            #   项目 Logo
 ├── src/                    # 数据处理与模型
 │   ├── train.py            # 训练脚本（命令行）
 │   ├── train.ipynb         # 训练 notebook（含曲线可视化）
@@ -237,8 +266,6 @@ ECG_Model/
 ├── requirements.txt        # 依赖清单
 └── README.md
 ```
-
----
 
 ## 数据说明与准备
 
@@ -292,8 +319,6 @@ python src/build_labels.py
 data/processed/labels/{train,val,test}_multilabel.npy
 data/processed/labels/{train,val,test}_labels_parsed.csv
 ```
-
----
 
 ## 复现流程（训练 → 评估 → 解释）
 
@@ -399,8 +424,6 @@ python src/baseline.py
 ```
 训练传统机器学习基线（手工特征 + 随机森林），输出 `models/checkpoints/baseline_rf.pkl`，用于与深度学习模型对比。
 
----
-
 ## 测试
 
 ```bash
@@ -412,8 +435,6 @@ python -m pytest tests/ -v
 ```
 
 覆盖：配置加载、模型前向、标签加载、阈值加载、信号预处理。
-
----
 
 ## 模型与评估
 
@@ -433,19 +454,23 @@ python -m pytest tests/ -v
 
 各类别表现较好：NORM (F1 0.84)、ASMI (0.74)、LAFB (0.72)。受类别不平衡影响，稀有类（IVCD F1 0.20）偏弱。
 
----
-
 ## 已知限制与后续改进
 
 - 稀有类别（如 IVCD）样本少，识别偏弱，可尝试数据增强 / 更多数据 / 类别重加权
 - 模型当前为 CPU 训练，训练时间较长，训练脚本已支持 GPU 加速
 - WFDB 当前支持单 `.dat` 文件记录（对应 PTB-XL 等常规格式）
 
----
-
 ## 许可证与致谢
 
 - 数据集：PTB-XL（© 2020 Physionet，遵循其数据集许可协议）
 - 本项目暂时仅供练习、测试用途
 
-**版本**：v0.2.0 | **日期**：2026-08
+---
+
+<p align="center">
+  <sub>MIT — see <a href="./LICENSE">LICENSE</a></sub>
+  <br/>
+  <sub>数据：PTB-XL（© 2020 PhysioNet，遵循其数据集许可协议）</sub>
+  <br/>
+  <sub>版本：v0.2.0 · 日期：2026-08</sub>
+</p>
