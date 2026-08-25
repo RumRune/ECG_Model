@@ -1,0 +1,71 @@
+paths:
+  data_dir: data/processed
+  model_dir: models
+  checkpoints: models/checkpoints
+  version_dir: models/versioning
+  log_dir: logs
+data:
+  sampling_rate: 100
+  duration: 10
+  num_leads: 12
+  num_classes: 10
+  processed_dir: data/processed
+  class_names:
+  - NORM
+  - IMI
+  - ASMI
+  - LVH
+  - NDT
+  - LAFB
+  - ISC_
+  - IRBBB
+  - PVC
+  - IVCD
+training:
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.0005
+  weight_decay: 5e-4
+  val_split: 0.15
+  early_stopping_patience: 10
+  lr_scheduler_patience: 7
+  label_smoothing: 0.0
+  use_weighted_bce: false
+  optimizer: adam
+  loss_type: focal
+  focal_gamma: 3.0
+  focal_alpha:
+  - 0.1
+  - 0.15
+  - 0.7
+  - 0.75
+  - 0.75
+  - 0.8
+  - 0.85
+  - 0.7
+  - 0.2
+  - 0.75
+  use_weighted_sampler: true
+model:
+  name: resnet18
+  dropout: 0.5
+evaluation:
+  threshold: 0.5
+  metrics:
+  - accuracy
+  - precision_macro
+  - recall_macro
+  - f1_macro
+  - auc_roc
+  - hamming_loss
+logging:
+  use_wandb: false
+  tensorboard: true
+  print_freq: 10
+hardware:
+  device: auto
+  num_workers: 4
+  seed: 42
+versioning:
+  version: 1.2.0
+  description: 修复标签编码bug（0概率SCP码不再计为正例）+ 重新选择诊断类

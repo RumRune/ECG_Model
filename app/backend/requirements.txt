@@ -1,0 +1,7 @@
+# app/backend 后端依赖（可用根目录 requirements.txt 统一安装）
+fastapi>=0.110
+uvicorn[standard]>=0.29
+torch>=2.2
+numpy>=2.0
+pyyaml>=6.0
+pydantic>=2.6

@@ -1,0 +1,74 @@
+# ==================================================================
+# ECG_Model — Git 忽略规则
+# ==================================================================
+
+# ---------- 数据（体积大，不入库；如需复现请自行下载） ----------
+data/raw/
+data/processed/
+
+# ---------- 模型权重 / 检查点 ----------
+# 说明：best_model.pth 约 16MB，baseline_rf.pkl 约 23MB。
+# 如需在仓库中保留预训练模型，可去掉下面两行注释（不推荐超大仓库）；
+# 默认忽略，仅保留目录结构和网络定义代码。
+models/checkpoints/
+models/versioning/
+
+# ---------- 训练日志 / 运行产物 ----------
+logs/
+reports/archive/
+*.npz
+
+# ---------- Python 缓存 ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ---------- 虚拟环境 ----------
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ---------- 编辑器 / IDE ----------
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ---------- Jupyter 检查点 ----------
+.ipynb_checkpoints/
+
+# ---------- README 生成备份 ----------
+README_backup/
+
+# ---------- 会话备份（含对话记录，切勿入库） ----------
+_session_backup/
+
+# ---------- 测试临时文件 ----------
+_report/
+.tmp/
+temp/
+
+# ---------- 可解释性分析输出 ----------
+reports/interpretations/

@@ -1,0 +1,15 @@
+{
+  "description": "Top-10 诊断类 SCP codes（按 value>0 出现频率选取）→ 可读名称",
+  "codes": {
+    "NORM":  "Normal ECG",
+    "IMI":   "Inferior Myocardial Infarction",
+    "ASMI":  "Anteroseptal Myocardial Infarction",
+    "LVH":   "Left Ventricular Hypertrophy",
+    "NDT":   "Non-Diagnostic T Abnormalities",
+    "LAFB":  "Left Anterior Fascicular Block",
+    "ISC_":  "Myocardial Ischemia",
+    "IRBBB": "Incomplete Right Bundle Branch Block",
+    "PVC":   "Premature Ventricular Contractions",
+    "IVCD":  "Intraventricular Conduction Disturbance"
+  }
+}

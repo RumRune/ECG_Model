@@ -1,0 +1,73 @@
+# ============================================================
+# ECG 多标签分类模型 - 配置文件（适配 ResNet1D 训练）
+# v1.0 基线版本（保留存档）；当前主配置见 configs/config.yaml
+# 注意：所有路径均为相对项目根目录（ECG_Model/）的路径
+# ============================================================
+paths:
+  data_dir: "data/processed"
+  model_dir: "models"
+  checkpoints: "models/checkpoints"
+  version_dir: "models/versioning"
+  log_dir: "logs"
+
+data:
+  sampling_rate: 100
+  duration: 10
+  num_leads: 12
+  num_classes: 10
+  processed_dir: "data/processed"
+  class_names:
+    - NORM
+    - IMI
+    - ASMI
+    - LVH
+    - NDT
+    - LAFB
+    - ISC_
+    - IRBBB
+    - PVC
+    - IVCD
+
+training:
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.0005          # 提高学习率，弥补 Focal Loss 导致的梯度减小
+  weight_decay: 5e-4            # 降低到 1e-4 ~ 1e-3，避免强正则化妨碍稀有类学习
+  val_split: 0.15
+  early_stopping_patience: 10
+  lr_scheduler_patience: 7      # 适当增加，让模型在平台期前充分探索
+  label_smoothing: 0.0           # 与 Focal Loss 冲突，关闭
+  use_weighted_bce: false        # Focal Loss 自带 alpha 权重，不需要 BCE 的 pos_weight
+  optimizer: "adam"
+  loss_type: focal
+  focal_alpha: 0.25             # 可以尝试[0.25, 0.25, 0.5, 0.5, ...]针对稀有类调高
+  focal_gamma: 2.0              # 默认为2，进一步增加可提升对难样本的关注 (如3)
+  use_weighted_sampler: true    # 新增，让每个 batch 更均衡地包含正样本
+
+model:
+  name: "resnet18"
+  dropout: 0.5                    # ✅ 0.3 -> 0.5
+
+evaluation:
+  threshold: 0.5
+  metrics:
+    - "accuracy"
+    - "precision_macro"
+    - "recall_macro"
+    - "f1_macro"
+    - "auc_roc"
+    - "hamming_loss"
+
+logging:
+  use_wandb: false
+  tensorboard: true
+  print_freq: 10
+
+hardware:
+  device: "auto"
+  num_workers: 4
+  seed: 42
+
+versioning:
+  version: "1.0.0"
+  description: "多标签基线 - 强正则化版本（类别已按 value>0 重新选取）"

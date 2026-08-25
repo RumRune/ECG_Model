@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心电图 AI 辅助诊断平台</title>
+<!-- 本地 Plotly.js（不依赖外网 CDN） -->
+<script src="/static/vendor/plotly.min.js" charset="utf-8"></script>
+<style>
+  :root {
+    --primary: #e74c3c;
+    --primary-dark: #c0392b;
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --text: #2c3e50;
+    --muted: #95a5a6;
+    --border: #eef0f3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff; padding: 22px 32px; box-shadow: 0 2px 12px rgba(0,0,0,.15);
+  }
+  .header h1 { font-size: 26px; font-weight: 800; letter-spacing: .5px; }
+  .header p { opacity: .9; margin-top: 4px; font-size: 14px; }
+  /* Layout */
+  .layout { display: flex; gap: 20px; padding: 20px 28px; }
+  .sidebar {
+    width: 300px; background: var(--card); border-radius: 14px;
+    padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.05); height: fit-content;
+    border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .main { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .card {
+    background: var(--card); border-radius: 14px; padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.05); border: 1px solid var(--border);
+  }
+  h2.section { font-size: 18px; margin-bottom: 14px; color: var(--text); }
+  h2.section::before { content: ""; display: inline-block; width: 4px; height: 16px;
+    background: var(--primary); margin-right: 8px; border-radius: 2px; vertical-align: -2px; }
+  /* Sidebar controls */
+  .radio-group { display: flex; gap: 10px; margin-bottom: 16px; }
+  .radio-group label {
+    flex: 1; text-align: center; padding: 10px; border: 2px solid var(--border);
+    border-radius: 10px; cursor: pointer; font-size: 14px; transition: .2s;
+  }
+  .radio-group input { display: none; }
+  .radio-group label.active { border-color: var(--primary); background: #fdf2f2; color: var(--primary); font-weight: 600; }
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 18px;
+    text-align: center; cursor: pointer; transition: .2s; margin-bottom: 10px;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--primary); background: #fff8f8; }
+  .upload-zone input { display: none; }
+  .upload-zone .icon { font-size: 34px; display: block; margin-bottom: 6px; }
+  .upload-zone .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .upload-zone.has-file { border-color: #27ae60; background: #f0faf4; }
+  .upload-zone.has-file .icon { color: #27ae60; }
+  .btn {
+    width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 15px;
+    font-weight: 700; cursor: pointer; transition: .2s; margin-top: 8px;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+  .fileinfo { margin-top: 14px; }
+  .fileinfo .item { display: flex; justify-content: space-between; padding: 6px 0;
+    border-bottom: 1px solid var(--border); font-size: 13px; }
+  .fileinfo .item .k { color: var(--muted); }
+  .fileinfo .item .v { font-weight: 600; }
+  /* Meta cards */
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 12px; }
+  .meta-card { background: #f8f9fb; border-radius: 10px; padding: 12px; text-align: center; }
+  .meta-card .label { font-size: 12px; color: var(--muted); }
+  .meta-card .value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  /* Leads selector */
+  .lead-select { margin: 10px 0; }
+  .lead-select select { width: 100%; padding: 9px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; }
+  /* Result */
+  .result-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  .result-table th, .result-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  .result-table th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .result-table tr.positive td { background: #fff0f0; }
+  .prob-bar { width: 120px; height: 8px; background: #eee; border-radius: 4px; position: relative; display: inline-block; vertical-align: middle; }
+  .prob-bar span { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; background: var(--primary); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .badge.pos { background: var(--primary); color: #fff; }
+  .badge.neg { background: #ecf0f1; color: #7f8c8d; }
+  /* Alert box */
+  .alert { border-radius: 10px; padding: 16px; margin-top: 14px; }
+  .alert.alert-danger { background: #fdecea; border-left: 5px solid var(--primary); }
+  .alert.alert-success { background: #eafaf1; border-left: 5px solid #27ae60; }
+  .alert.alert-info { background: #eaf4fb; border-left: 5px solid #3498db; }
+  .alert ul { margin: 8px 0 0 18px; }
+  .alert li { margin: 4px 0; }
+  #chart { width: 100%; height: 560px; }
+  .status { font-size: 13px; margin-top: 8px; color: var(--muted); min-height: 18px; }
+  .spinner { display: none; text-align: center; padding: 30px; }
+  .spinner.show { display: block; }
+  .spinner::after { content: ""; width: 36px; height: 36px; border: 4px solid #eee;
+    border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🫀 心电图 AI 辅助诊断平台</h1>
+    <p>上传心电图文件 · 自动分析 · 可视化解释（Grad-CAM 热力图）</p>
+  </div>
+
+  <div class="layout">
+    <!-- ========== 左侧操作面板 ========== -->
+    <div class="sidebar">
+      <h2 class="section">操作面板</h2>
+
+      <div class="radio-group">
+        <label id="radio-wfdb" class="active">
+          <input type="radio" name="fmt" value="wfdb" checked onchange="onFormatChange('wfdb')">
+          WFDB
+        </label>
+        <label id="radio-dicom">
+          <input type="radio" name="fmt" value="dicom" onchange="onFormatChange('dicom')">
+          DICOM
+        </label>
+      </div>
+
+      <!-- WFDB 上传 -->
+      <div id="wfdb-upload">
+        <div class="upload-zone" id="zone-dat">
+          <span class="icon">📄</span>
+          <div id="zone-dat-text">点击或拖拽选择数据文件（.dat）</div>
+          <input type="file" id="file-dat" accept=".dat">
+        </div>
+        <div class="upload-zone" id="zone-hea">
+          <span class="icon">📃</span>
+          <div id="zone-hea-text">点击或拖拽选择头文件（.hea）</div>
+          <input type="file" id="file-hea" accept=".hea">
+        </div>
+        <div class="hint" style="color:var(--muted);font-size:12px;">需同时选择 .dat 与 .hea 两个文件</div>
+      </div>
+
+      <!-- DICOM 上传 -->
+      <div id="dicom-upload" style="display:none;">
+        <div class="upload-zone" id="zone-dcm">
+          <span class="icon">🩻</span>
+          <div id="zone-dcm-text">点击或拖拽选择 DICOM 文件（.dcm）</div>
+          <input type="file" id="file-dcm" accept=".dcm">
+        </div>
+      </div>
+
+      <div class="fileinfo" id="fileinfo"></div>
+
+      <button class="btn btn-primary" id="btn-analyze" onclick="runDiagnosis()" disabled>🔍 开始 AI 分析</button>
+      <div class="status" id="status"></div>
+
+      <div style="margin-top:16px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px;">
+        AI 结果仅供参考，请咨询专业医师。<br>模型版本 v1.2.0 · ECG_Model
+      </div>
+    </div>
+
+    <!-- ========== 右侧内容区 ========== -->
+    <div class="main">
+      <!-- 文件信息 -->
+      <div class="card" id="card-meta" style="display:none;">
+        <h2 class="section">文件基本信息</h2>
+        <div class="meta-grid" id="meta-grid"></div>
+        <div class="lead-select">
+          显示导联（可多选）：
+          <select id="lead-select" multiple size="6" onchange="renderChart()"></select>
+        </div>
+      </div>
+
+      <!-- 波形 -->
+      <div class="card" id="card-chart" style="display:none;">
+        <h2 class="section">心电图波形 <span id="chart-title" style="font-size:13px;color:var(--muted);"></span></h2>
+        <div id="chart"></div>
+      </div>
+
+      <!-- 加载 -->
+      <div class="spinner" id="spinner"></div>
+
+      <!-- 诊断结果 -->
+      <div id="result-wrap" style="display:none;">
+        <div class="card">
+          <h2 class="section">诊断结果</h2>
+          <table class="result-table" id="result-table">
+            <thead><tr><th>疾病名称</th><th>预测概率</th><th>判定</th><th>阈值</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="alert-box"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ============ 全局状态 ============
+const state = {
+  fmt: 'wfdb',
+  datFile: null, heaFile: null, dcmFile: null,
+  signals: null, leadNames: [], fs: null, meta: null,
+  probs: null, preds: null, thresholds: null, classNames: [],
+  heatmaps: null, analyzed: false, selectedLeads: [],
+};
+
+const NAME_MAP = {
+  'NORM': '正常心电图', 'IMI': '下壁心肌梗死', 'ASMI': '前间壁心肌梗死',
+  'LVH': '左心室肥厚', 'NDT': '非特异性ST-T改变', 'LAFB': '左前分支传导阻滞',
+  'ISC_': '心肌缺血', 'IRBBB': '不完全性右束支传导阻滞',
+  'PVC': '室性早搏', 'IVCD': '室内传导延迟',
+};
+const BENIGN = new Set(['NORM']);
+
+// ============ 格式切换 ============
+function onFormatChange(fmt) {
+  state.fmt = fmt;
+  document.getElementById('radio-wfdb').classList.toggle('active', fmt==='wfdb');
+  document.getElementById('radio-dicom').classList.toggle('active', fmt==='dicom');
+  document.getElementById('wfdb-upload').style.display = fmt==='wfdb' ? 'block' : 'none';
+  document.getElementById('dicom-upload').style.display = fmt==='dicom' ? 'block' : 'none';
+  // 切换格式时清空解析状态，避免显示上一格式的波形
+  state.signals = null; state.analyzed = false; state.heatmaps = null;
+  document.getElementById('card-meta').style.display = 'none';
+  document.getElementById('card-chart').style.display = 'none';
+  document.getElementById('result-wrap').style.display = 'none';
+  setStatus('');
+  updateCanAnalyze();
+}
+
+// ============ 文件选择 ============
+function onFilePick(kind, droppedFile) {
+  const input = document.getElementById('file-' + kind);
+  const file = droppedFile || (input.files && input.files[0]) || null;
+
+  // 格式校验（按当前格式要求）
+  if (file) {
+    const name = file.name.toLowerCase();
+    if (kind === 'dat' && !name.endsWith('.dat')) {
+      setStatus('❌ 请选择 .dat 格式的数据文件'); input.value = ''; return;
+    }
+    if (kind === 'hea' && !name.endsWith('.hea')) {
+      setStatus('❌ 请选择 .hea 格式的头文件'); input.value = ''; return;
+    }
+    if (kind === 'dcm' && !(name.endsWith('.dcm') || name.endsWith('.dicom'))) {
+      setStatus('❌ 请选择 .dcm 格式的 DICOM 文件'); input.value = ''; return;
+    }
+  }
+
+  if (kind === 'dat') {
+    state.datFile = file;
+    markZone('zone-dat', 'zone-dat-text', state.datFile, '.dat');
+  } else if (kind === 'hea') {
+    state.heaFile = file;
+    markZone('zone-hea', 'zone-hea-text', state.heaFile, '.hea');
+  } else if (kind === 'dcm') {
+    state.dcmFile = file;
+    markZone('zone-dcm', 'zone-dcm-text', state.dcmFile, '.dcm');
+  }
+  updateCanAnalyze();
+  resetResult();
+  // WFDB 需两个文件齐了才自动解析；DICOM 选完即解析
+  if (state.fmt === 'wfdb') {
+    if (state.datFile && state.heaFile) parseAndShow();
+  } else {
+    if (state.dcmFile) parseAndShow();
+  }
+}
+
+function markZone(zoneId, textId, file, label) {
+  const zone = document.getElementById(zoneId);
+  const text = document.getElementById(textId);
+  zone.classList.toggle('has-file', !!file);
+  text.textContent = file ? ('✅ ' + file.name) : ('选择' + label + ' 文件');
+}
+
+function updateCanAnalyze() {
+  const ok = state.fmt === 'wfdb'
+    ? (state.datFile && state.heaFile)
+    : !!state.dcmFile;
+  document.getElementById('btn-analyze').disabled = !ok;
+}
+
+// ============ 解析文件 → 展示波形 ============
+async function parseAndShow() {
+  // 前置检查：WFDB 需要两个文件，DICOM 需要一个
+  if (state.fmt === 'wfdb' && !(state.datFile && state.heaFile)) {
+    setStatus('⚠️ 请先同时选择 .dat 与 .hea 文件');
+    return;
+  }
+  if (state.fmt === 'dicom' && !state.dcmFile) {
+    setStatus('⚠️ 请先选择 .dcm 文件');
+    return;
+  }
+  showSpinner(true);
+  setStatus('正在解析心电图文件…');
+  try {
+    if (state.fmt === 'wfdb') {
+      const fd = new FormData();
+      fd.append('dat', state.datFile);
+      fd.append('hea', state.heaFile);
+      const r = await fetch('/parse_wfdb', { method: 'POST', body: fd });
+      if (!r.ok) {
+        let detail = '解析失败';
+        try { detail = (await r.json()).detail || detail; } catch (e) {}
+        throw new Error(detail);
+      }
+      const data = await r.json();
+      state.signals = data.signals; state.leadNames = data.lead_names;
+      state.fs = data.fs; state.meta = data.meta;
+    } else {
+      const fd = new FormData();
+      fd.append('dcm', state.dcmFile);
+      const r = await fetch('/parse_dicom', { method: 'POST', body: fd });
+      if (!r.ok) {
+        let detail = '解析失败';
+        try { detail = (await r.json()).detail || detail; } catch (e) {}
+        throw new Error(detail);
+      }
+      const data = await r.json();
+      state.signals = data.signals; state.leadNames = data.lead_names;
+      state.fs = data.fs; state.meta = data.meta;
+    }
+    if (!state.signals || !state.signals.length) throw new Error('未解析到有效信号数据');
+    // 默认只显示第一个导联，用户可多选
+    state.selectedLeads = state.leadNames.slice(0, 1);
+    renderMeta();
+    buildLeadSelect();
+    renderChart();
+    document.getElementById('card-meta').style.display = 'block';
+    document.getElementById('card-chart').style.display = 'block';
+    setStatus('✅ 解析完成，可开始 AI 分析');
+  } catch (e) {
+    setStatus('❌ ' + e.message);
+  } finally {
+    showSpinner(false);
+  }
+}
+
+function renderMeta() {
+  const grid = document.getElementById('meta-grid');
+  grid.innerHTML = '';
+  const meta = state.meta || {};
+  for (const [k, v] of Object.entries(meta)) {
+    if (k === '导联列表') continue;
+    grid.innerHTML += `<div class="meta-card"><div class="label">${k}</div><div class="value">${v}</div></div>`;
+  }
+  document.getElementById('chart-title').textContent = ' ' + state.leadNames.join(' · ');
+}
+
+function buildLeadSelect() {
+  const sel = document.getElementById('lead-select');
+  sel.innerHTML = '';
+  state.leadNames.forEach((n, i) => {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = n;
+    if (state.selectedLeads.includes(n)) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+// ============ 波形绘制（Plotly）============
+function renderChart() {
+  if (!state.signals || !state.signals.length) return;
+  const sel = document.getElementById('lead-select');
+  // 选中的导联索引（多选，按当前选中项）
+  let leadIdx = [];
+  if (sel && sel.options && sel.selectedOptions) {
+    for (const opt of sel.selectedOptions) leadIdx.push(parseInt(opt.value, 10));
+  }
+  if (!leadIdx.length) leadIdx = state.leadNames.map((_, i) => i);  // 未选 → 全部
+
+  const traces = [];
+  const n = state.signals[0].length;
+  const time = new Array(n);
+  for (let i = 0; i < n; i++) time[i] = i / state.fs;
+
+  // 计算间距（基于选中导联的幅度）
+  let maxAmp = 0;
+  leadIdx.forEach(li => {
+    const sig = state.signals[li] || [];
+    for (let i = 0; i < sig.length; i++) maxAmp = Math.max(maxAmp, Math.abs(sig[i]));
+  });
+  const spacing = Math.max(maxAmp * 2.5, 1e-6);
+
+  leadIdx.forEach((li, k) => {
+    const yOffset = (leadIdx.length - 1 - k) * spacing;
+    const y = state.signals[li].map(v => v + yOffset);
+    traces.push({
+      x: time, y: y, type: 'scatter', mode: 'lines',
+      line: { color: '#2c3e50', width: 0.9 },
+      name: state.leadNames[li] || ('Lead_' + (li + 1)), showlegend: false,
+    });
+  });
+
+  // Grad-CAM 热力图叠加（半透明红色色带）
+  if (state.heatmaps && Object.keys(state.heatmaps).length) {
+    // 可能有多类热力图，叠加显示第一类（或全部平均）
+    const hmKeys = Object.keys(state.heatmaps);
+    let hmSum = null;
+    for (const key of hmKeys) {
+      const hm = state.heatmaps[key];
+      if (!hm || !hm.length) continue;
+      if (!hmSum) hmSum = hm.map(v => v);
+      else for (let i = 0; i < hm.length; i++) hmSum[i] += hm[i];
+    }
+    if (hmSum && hmSum.length) {
+      // 线性插值上采样到信号长度（模型热力图长度 32 → 信号长度 1000）
+      const hmN = hmSum.length;
+      const upsample = (arr, targetLen) => {
+        if (arr.length === targetLen) return arr;
+        const out = new Array(targetLen);
+        for (let i = 0; i < targetLen; i++) {
+          const pos = (i / (targetLen - 1)) * (arr.length - 1);
+          const i0 = Math.floor(pos), i1 = Math.min(i0 + 1, arr.length - 1);
+          const frac = pos - i0;
+          out[i] = arr[i0] * (1 - frac) + arr[i1] * frac;
+        }
+        return out;
+      };
+      const hmUp = upsample(hmSum, n);
+      const hmMin = Math.min(...hmUp), hmMax = Math.max(...hmUp);
+      const norm = hmUp.map(v => (hmMax - hmMin) < 1e-8 ? 0 : (v - hmMin) / (hmMax - hmMin));
+      const step = Math.max(1, Math.floor(n / 80));
+      for (let j = 0; j < n - 1; j += step) {
+        const jEnd = Math.min(j + step, n - 1);
+        const segVals = norm.slice(j, jEnd);
+        const segVal = segVals.reduce((a, b) => a + b, 0) / Math.max(1, segVals.length);
+        const alpha = 0.20 + segVal * 0.45;
+        const x0 = time[j], x1 = time[jEnd];
+        leadIdx.forEach((li, k) => {
+          const yMid = state.signals[li][j] + (leadIdx.length - 1 - k) * spacing;
+          traces.push({
+            x: [x0, x1], y: [yMid - spacing * 0.45, yMid - spacing * 0.45], type: 'scatter',
+            mode: 'lines', line: { color: `rgba(220,38,38,${alpha})`, width: 28 },
+            hoverinfo: 'skip', showlegend: false,
+          });
+        });
+      }
+    }
+  }
+
+  const layout = {
+    height: 560, margin: { l: 40, r: 40, t: 30, b: 40 },
+    paper_bgcolor: 'white', plot_bgcolor: 'white',
+    xaxis: { title: '时间（秒）', gridcolor: '#eee' },
+    yaxis: { showticklabels: false, gridcolor: '#eee' },
+    hovermode: 'x unified',
+  };
+  Plotly.newPlot('chart', traces, layout, { responsive: true });
+}
+
+// ============ AI 诊断 ============
+async function runDiagnosis() {
+  // 前置检查：未解析时先解析
+  if (!state.signals) {
+    await parseAndShow();
+    if (!state.signals) return;  // 解析失败则中止
+  }
+  showSpinner(true);
+  setStatus('AI 模型正在分析…');
+  document.getElementById('btn-analyze').disabled = true;
+  try {
+    const body = { signals: state.signals };
+    const r = await fetch('/predict?explain=true', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      let detail = '诊断失败';
+      try { detail = (await r.json()).detail || detail; } catch (e) {}
+      throw new Error(detail);
+    }
+    const data = await r.json();
+    state.probs = data.probabilities; state.preds = data.pred_labels;
+    state.thresholds = data.threshold_used; state.classNames = data.class_names;
+    state.heatmaps = data.gradcam_heatmaps || null;
+    state.analyzed = true;
+    renderResult();
+    if (state.heatmaps) renderChart();  // 重绘叠加热力图
+    setStatus('✅ 分析完成');
+  } catch (e) {
+    setStatus('❌ ' + e.message);
+  } finally {
+    document.getElementById('btn-analyze').disabled = !(state.fmt==='wfdb' ? (state.datFile&&state.heaFile) : !!state.dcmFile);
+    showSpinner(false);
+  }
+}
+
+function renderResult() {
+  const tbody = document.querySelector('#result-table tbody');
+  tbody.innerHTML = '';
+  const rows = state.classNames.map((name, i) => ({
+    name: (NAME_MAP[name]||name) + '（' + name + '）', prob: state.probs[i],
+    pred: state.preds[i], thr: state.thresholds[i],
+  }));
+  rows.sort((a, b) => (b.pred - a.pred) || (b.prob - a.prob));
+  rows.forEach(row => {
+    const cls = row.pred === 1 && !BENIGN[row.name.split('（')[1].replace('）','')] ? 'positive' : '';
+    tbody.innerHTML += `
+      <tr class="${cls}">
+        <td>${row.name}</td>
+        <td><span class="prob-bar"><span style="width:${Math.round(row.prob*100)}%"></span></span> ${(row.prob*100).toFixed(1)}%</td>
+        <td>${row.pred===1 ? '<span class="badge pos">阳性</span>' : '<span class="badge neg">阴性</span>'}</td>
+        <td>${(+row.thr).toFixed(3)}</td>
+      </tr>`;
+  });
+  document.getElementById('result-wrap').style.display = 'block';
+
+  // 异常汇总
+  const abn = state.classNames.filter((n,i) => state.preds[i]===1 && !BENIGN[n]);
+  const ben = state.classNames.filter((n,i) => state.preds[i]===1 && BENIGN[n]);
+  const box = document.getElementById('alert-box');
+  if (abn.length) {
+    box.innerHTML = `<div class="alert alert-danger"><strong>🩺 共检测到 ${abn.length} 种可能性较大的异常：</strong>
+      <ul>${abn.map(n => `<li><b>${NAME_MAP[n]||n}</b>：置信度 ${(state.probs[state.classNames.indexOf(n)]*100).toFixed(1)}%</li>`).join('')}</ul>
+      <div style="margin-top:8px;font-size:13px;color:#7f8c8d;">💡 本结果仅供专业医师参考。</div></div>`;
+  } else if (ben.length) {
+    box.innerHTML = `<div class="alert alert-success">✅ 检出正常：${ben.map(n => (NAME_MAP[n]||n)).join('、')}</div>`;
+  } else {
+    box.innerHTML = `<div class="alert alert-info">💡 未检出明显异常，建议咨询专业医师。</div>`;
+  }
+}
+
+// ============ 辅助 ============
+function showSpinner(show) {
+  document.getElementById('spinner').classList.toggle('show', show);
+}
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+function resetResult() {
+  state.signals = null; state.analyzed = false; state.heatmaps = null;
+  document.getElementById('card-meta').style.display = 'none';
+  document.getElementById('card-chart').style.display = 'none';
+  document.getElementById('result-wrap').style.display = 'none';
+}
+
+// ============ 上传交互绑定（点击 + 拖拽）============
+function bindUploadZone(zoneId, inputId, kind) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+
+  // 点击区域 → 打开文件选择
+  zone.addEventListener('click', (e) => {
+    e.preventDefault();
+    input.click();
+  });
+  // 阻止点击 input 自身时冒泡再次触发 zone.click
+  input.addEventListener('click', (e) => e.stopPropagation());
+
+  // 文件选择后统一处理
+  input.addEventListener('change', () => onFilePick(kind));
+
+  // 拖拽支持
+  ['dragenter', 'dragover'].forEach(evt => {
+    zone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.add('drag');
+    });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    zone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove('drag');
+    });
+  });
+  zone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer.files;
+    if (files && files.length) {
+      onFilePick(kind, files[0]);   // 直接传拖入的文件
+    }
+  });
+}
+
+// 绑定三个上传区域
+bindUploadZone('zone-dat', 'file-dat', 'dat');
+bindUploadZone('zone-hea', 'file-hea', 'hea');
+bindUploadZone('zone-dcm', 'file-dcm', 'dcm');
+</script>
+</body>
+</html>

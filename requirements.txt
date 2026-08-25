@@ -1,0 +1,39 @@
+# ============================================================
+# ECG 多标签诊断模型 — 根依赖清单（官方原生 Python 环境）
+# 已适配：Python 3.14 / numpy 2.x / pandas 3.x / torch 2.10+
+# 安装：pip install -r requirements.txt
+# ============================================================
+
+# ---- 数据处理与科学计算 ----
+numpy>=2.0
+scipy>=1.13
+pandas>=2.2
+
+# ---- 信号读取（WFDB 原始数据） ----
+wfdb>=4.1
+
+# ---- 深度学习 ----
+torch>=2.2
+# 可选：训练日志可视化（train.py 无此包时自动跳过）
+# tensorboard>=2.16
+
+# ---- 传统机器学习（基线对比） ----
+scikit-learn>=1.4
+joblib>=1.3
+
+# ---- 可视化 ----
+matplotlib>=3.8
+seaborn>=0.13
+plotly>=5.20
+
+# ---- 配置与工具 ----
+pyyaml>=6.0
+tqdm>=4.66
+
+# ---- Web 应用（后端 + HTML 前端） ----
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+
+# ---- 可选：模型可解释性（Integrated Gradients） ----
+# captum>=0.7
